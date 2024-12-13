@@ -1,0 +1,397 @@
+import { Button, VerticalBox, LineEdit, ComboBox, GridBox, HorizontalBox } from "std-widgets.slint";
+
+component SubTitle inherits Text {
+    horizontal-alignment: center;
+    font-italic: true;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+export component AppWindow inherits Window {
+    width: 1300px;
+    height: 700px;
+
+    function trunc(f: float, n: int) -> float {
+        floor(f * pow(10, n)) / pow(10, n)
+    }
+
+    VerticalLayout {
+        padding: 20px;
+
+        Text {
+            text: "HYDRA";
+            width: 100%;
+            height: 50px;
+            color: #d3d3d3;
+            font-family: "Roboto";
+            font-weight: 800;
+            font-size: 32px;
+            horizontal-alignment: center;
+            vertical-alignment: center;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            letter-spacing: 5px;
+        }
+
+        layout := HorizontalBox {
+            padding: 5px;
+            VerticalBox {
+                VerticalBox {
+                    SubTitle {
+                        text: "Density / Area";
+                    }
+
+                    Text {
+                        text: "Occupancy Classification";
+                        vertical-alignment: bottom;
+                    }
+
+                    occupancy := ComboBox {
+                        current-value: "Choose an Occupancy Classification";
+                        model: [
+                            "Light Hazard",
+                            "Ordinary Hazard (Group 1)",
+                            "Ordinary Hazard (Group 2)",
+                            "Extra Hazard (Group 1)",
+                            "Extra Hazard (Group 2)"
+                        ];
+                    }
+
+                    Text {
+                        text: "Coverage Area";
+                        vertical-alignment: bottom;
+                    }
+
+                    area := ComboBox {
+                        current-value: "Choose the coverage area";
+                        model: occupancy.current-value == "Light Hazard" || occupancy.current-value == "Ordinary Hazard (Group 1)" || occupancy.current-value == "Ordinary Hazard (Group 2)" ? ["1500", "3000"] : occupancy.current-value == "Extra Hazard (Group 1)" || occupancy.current-value == "Extra Hazard (Group 2)" ? ["2500", "3000"] : [];
+                    }
+
+                    Text {
+                        text: "Density (gpm/ft^2)";
+                        vertical-alignment: bottom;
+                    }
+
+                    density := Text {
+                        text: occupancy.current-value == "Light Hazard" ? (area.current-value == 1500 ? 0.1 : area.current-value == 3000 ? 0.07 : "") : occupancy.current-value == "Ordinary Hazard (Group 1)" ? (area.current-value == 1500 ? 0.15 : area.current-value == 3000 ? 0.12 : "") : occupancy.current-value == "Ordinary Hazard (Group 2)" ? (area.current-value == 1500 ? 0.2 : area.current-value == 3000 ? 0.17 : "") : occupancy.current-value == "Extra Hazard (Group 1)" ? (area.current-value == 2500 ? 0.3 : area.current-value == "3000" ? 0.28 : "") : occupancy.current-value == "Extra Hazard (Group 1)" ? (area.current-value == 3000 ? 0.4 : area.current-value == 3000 ? 0.38 : "") : "";
+                    }
+                }
+
+                VerticalBox {
+                    SubTitle {
+                        text: "Sprinkler Specifications";
+                    }
+
+                    Text {
+                        text: "Diameter (in)";
+                        vertical-alignment: bottom;
+                    }
+
+                    diameter := ComboBox {
+                        current-value: "Choose the sprinkler diameter";
+                        model: [
+                            0.5,
+                            0.75,
+                            1.0,
+                            1.25,
+                            1.50,
+                            2.0,
+                            2.50,
+                            3.0,
+                            3.50,
+                            4.0,
+                            5.0,
+                            6.0,
+                            8.0,
+                            10.0,
+                            12.0
+                        ];
+                    }
+
+                    Text {
+                        text: "K-factor (gpm/psi^(1/2))";
+                        vertical-alignment: bottom;
+                    }
+
+                    k-factor := LineEdit {
+                        placeholder-text: "Indicate a K-factor value.";
+                        accepted(string) => {
+                            string.is-float()
+                        }
+                    }
+                }
+            }
+
+            VerticalBox {
+                SubTitle {
+                    text: "Sprinkler Distribution";
+                }
+
+                Text {
+                    text: "Max. Sprinkler Coverage Area (ft^2)";
+                    vertical-alignment: bottom;
+                }
+
+                coverage-area := Text {
+                    text: occupancy.current-value == "Light Hazard" ? 225 : occupancy.current-value == "Ordinary Hazard (Group 1)" || occupancy.current-value == "Ordinary Hazard (Group 2)" ? 130 : occupancy.current-value == "Extra Hazard (Group 1)" || occupancy.current-value == "Extra Hazard (Group 2)" ? 100 : "";
+                }
+
+                Text {
+                    text: "Min. # of Sprinklers";
+                    vertical-alignment: bottom;
+                }
+
+                n-sprinklers := Text {
+                    text: area.current-value.is-float() && coverage-area.text.is-float() ? ceil( area.current-value.to-float() / coverage-area.text.to-float()) : "";
+                }
+
+                Text {
+                    text: "Max. Sprinkler Spacing (ft)";
+                    vertical-alignment: bottom;
+                }
+
+                spacing := Text {
+                    text: occupancy.current-value == "Light Hazard" || occupancy.current-value == "Ordinary Hazard (Group 1)" || occupancy.current-value == "Ordinary Hazard (Group 2)" ? 15 : occupancy.current-value == "Extra Hazard (Group 1)" || occupancy.current-value == "Extra Hazard (Group 2)" ? 12 : "";
+                }
+
+                Text {
+                    text: "Max. Branch Separation (ft)";
+                    vertical-alignment: bottom;
+                }
+
+                separation := Text {
+                    text: coverage-area.text.is-float() && spacing.text.is-float() ? trunc(coverage-area.text.to-float() / spacing.text.to-float(), 2) : "";
+                }
+
+                Text {
+                    text: "Min. # of Sprinklers per Branch";
+                    vertical-alignment: bottom;
+                }
+
+                n-sprinklers-per-branch := Text {
+                    text: area.current-value.is-float() && spacing.text.is-float() ? ceil( 1.2 * sqrt(area.current-value.to-float()) / spacing.text.to-float()) : "";
+                }
+
+                Text {
+                    text: "Min. # of Branches";
+                    vertical-alignment: bottom;
+                }
+
+                n-branches := Text {
+                    text: area.current-value.is-float() && spacing.text.is-float() ? ceil( 1.2 * sqrt(area.current-value.to-float()) / spacing.text.to-float()) : "";
+                }
+            }
+
+            VerticalBox {
+                VerticalBox {
+                    SubTitle {
+                        text: "Flow";
+                    }
+
+                    Text {
+                        text: "Total Flow (gpm)";
+                        vertical-alignment: bottom;
+                    }
+
+                    flow := Text {
+                        text: area.current-value.is-float() && density.text.is-float() ? area.current-value.to-float() * density.text.to-float() : "";
+                    }
+
+                    Text {
+                        text: "Sprinkler Pressure (psi)";
+                        vertical-alignment: bottom;
+                    }
+
+                    sprinkler-pressure := Text {
+                        text: separation.text.is-float() ? (separation.text.to-float() <= 8 ? 7 : 20) : "";
+                    }
+
+                    Text {
+                        text: "Sprinkler Flow (gpm)";
+                        vertical-alignment: bottom;
+                    }
+
+                    sprinkler-flow := Text {
+                        text: k-factor.text.is-float() && sprinkler-pressure.text.is-float() ? trunc(k-factor.text.to-float() * sqrt(sprinkler-pressure.text.to-float()), 2) : "";
+                    }
+                }
+
+                VerticalBox {
+                    SubTitle {
+                        text: "Pipe Friction Loss";
+                    }
+
+                    Text {
+                        text: "Pipe Diameter (in)";
+                        vertical-alignment: bottom;
+                    }
+
+                    pipe-diameter := ComboBox {
+                        current-value: "Choose the pipe diameter";
+                        model: [
+                            0.5,
+                            0.75,
+                            1.0,
+                            1.25,
+                            1.50,
+                            2.0,
+                            2.50,
+                            3.0,
+                            3.50,
+                            4.0,
+                            5.0,
+                            6.0,
+                            8.0,
+                            10.0,
+                            12.0
+                        ];
+                    }
+
+                    Text {
+                        text: "Pipe Length (ft)";
+                        vertical-alignment: bottom;
+                    }
+
+                    length := LineEdit {
+                        placeholder-text: "Indicate the pipe length.";
+                        accepted(string) => {
+                            string.is-float()
+                        }
+                    }
+
+                    Text {
+                        text: "Equivalent Pipe Lengths (ft)";
+                        vertical-alignment: bottom;
+                    }
+
+                    eq-length := LineEdit {
+                        placeholder-text: "Indicate the equivalent pipe lengths.";
+                        accepted(string) => {
+                            string.is-float()
+                        }
+                    }
+
+                    Text {
+                        text: "Total Equivalent Pipe Length (ft)";
+                        vertical-alignment: bottom;
+                    }
+
+                    total-length := Text {
+                        text: length.text.is-float() && eq-length.text.is-float() ? length.text.to-float() + eq-length.text.to-float() : "";
+                    }
+
+                    //Text {
+                    //    text: "C-factor";
+                    //    vertical-alignment: bottom;
+                    //}
+
+                    //c-factor := LineEdit {
+                    //    placeholder-text: "Indicate a C-factor value.";
+                    //    text: 120;
+                    //    accepted(string) => {
+                    //        string.is-float()
+                    //    }
+                    //}
+                    
+                    Text {
+                        text: "Friction Loss Factor";
+                        vertical-alignment: bottom;
+                    }
+
+                    f-factor := LineEdit {
+                        placeholder-text: "Indicate a C-factor value.";
+                        text: 0.01;
+                        accepted(string) => {
+                            string.is-float()
+                        }
+                    }
+
+                    Text {
+                        text: "Friction Loss (Darcy-Weisbach)";
+                        vertical-alignment: bottom;
+                    }
+
+                    friction-loss := Text {
+                        text: f-factor.text.is-float() && total-length.text.is-float() && flow.text.is-float() && pipe-diameter.current-value.is-float() && pipe-diameter.current-value.to-float() != 0 ? trunc(0.000216 * f-factor.text.to-float() * total-length.text.to-float() * 62.4 * pow(flow.text.to-float(),2) / pow(pipe-diameter.current-value.to-float(),5), 2) : "";
+                    }
+                }
+            }
+
+            VerticalBox {
+                VerticalBox {
+                    SubTitle {
+                        text: "Total Required Pressure";
+                    }
+
+                    Text {
+                        text: "Highest Sprinkler Height (ft)";
+                        vertical-alignment: bottom;
+                    }
+
+                    height := LineEdit {
+                        placeholder-text: "Indicate the height difference.";
+                        text: 0;
+                        accepted(string) => {
+                            string.is-float()
+                        }
+                    }
+
+                    Text {
+                        text: "Elevation Head (psi)";
+                        vertical-alignment: bottom;
+                    }
+
+                    elevation-head := Text {
+                        text: height.text.is-float() ? trunc(height.text.to-float() / 2.31, 2) : "";
+                    }
+
+                    Text {
+                        text: "Total Pump Pressure (psi)";
+                        vertical-alignment: bottom;
+                    }
+
+                    pressure := Text {
+                        text: sprinkler-pressure.text.is-float() && friction-loss.text.is-float() && elevation-head.text.is-float() ? trunc(sprinkler-pressure.text.to-float() + friction-loss.text.to-float() + elevation-head.text.to-float(), 2) : "";
+                    }
+                }
+
+                VerticalBox {
+                    SubTitle {
+                        text: "Pump Power";
+                    }
+
+                    Text {
+                        text: "Required Power (HP)";
+                        vertical-alignment: bottom;
+                    }
+
+                    required-power := Text {
+                        text: pressure.text.is-float() ? trunc(flow.text.to-float() * pressure.text.to-float() / 1714, 2) : "";
+                    }
+
+                    Text {
+                        text: "Pump's Efficiency (%)";
+                        vertical-alignment: bottom;
+                    }
+
+                    eff := LineEdit {
+                        placeholder-text: "Indicate the pump's efficiency.";
+                        text: 60;
+                        accepted(string) => {
+                            string.is-float()
+                        }
+                    }
+
+                    Text {
+                        text: "Pump Power (HP)";
+                        vertical-alignment: bottom;
+                    }
+
+                    power := Text {
+                        text: required-power.text.is-float() && eff.text.is-float() && eff.text.to-float() != 0 ? trunc(required-power.text.to_float() / (eff.text.to-float() / 100), 2) : "";
+                    }
+                }
+            }
+        }
+    }
+}
